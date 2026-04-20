@@ -4,7 +4,7 @@
  * of ARCEP's MAJNUM and MAJRIO files.
  */
 
-import type { RawMobileNetworkCode, RawNumBlock, RawOperator, RawPortability } from "../src/types";
+import type { RawFrozenBlock, RawMobileNetworkCode, RawNumBlock, RawOperator, RawPortability } from "../src/types";
 
 /** Fictional operators covering nominal and edge cases. */
 export const OPERATORS: RawOperator[] = [
@@ -124,5 +124,23 @@ export const PORTABILITY_ENTRIES: RawPortability[] = [
 		EZABPQM: "7000",
 		Mnémo: "FRTE",
 		Date_Attribution: "01/09/2023",
+	},
+];
+
+/** Fictional frozen block entries (GELNUM schema). */
+export const FROZEN_BLOCKS: RawFrozenBlock[] = [
+	{
+		EZABPQM: "08359",
+		Type: "Code point sémaphore national",
+		"Ouverture des manifestations d'intérêts": "18/03/2026",
+		"Clôture des manifestations d'intérêts": "18/04/2026",
+		"Ouverture des demandes d'attribution": "19/04/2026",
+	},
+	{
+		EZABPQM: "0811672",
+		Type: "Numéros spéciaux vocaux à tarification majorée",
+		"Ouverture des manifestations d'intérêts": "20/03/2026",
+		"Clôture des manifestations d'intérêts": "20/04/2026",
+		"Ouverture des demandes d'attribution": "21/04/2026",
 	},
 ];

@@ -27,10 +27,12 @@
 export { parseCsv } from "./csv-parser.js";
 export { PhoneBlockRegistry } from "./PhoneBlockRegistry.js";
 export type {
+	FrozenBlock,
 	LookupResult,
 	MobileNetworkCode,
 	PhoneBlock,
 	PortabilityEntry,
+	RawFrozenBlock,
 	RawMobileNetworkCode,
 	RawNumBlock,
 	RawOperator,

@@ -21,10 +21,12 @@
 
 import { parseCsv } from "./csv-parser.js";
 import type {
+	FrozenBlock,
 	LookupResult,
 	MobileNetworkCode,
 	PhoneBlock,
 	PortabilityEntry,
+	RawFrozenBlock,
 	RawMobileNetworkCode,
 	RawNumBlock,
 	RawOperator,
@@ -92,6 +94,9 @@ export class PhoneBlockRegistry {
 	/** Portability entries (MAJPORTA), indexed by EZABPQM. */
 	private readonly portabilityIndex: ReadonlyMap<string, PortabilityEntry>;
 
+	/** Frozen number blocks (GELNUM), indexed by EZABPQM. */
+	private readonly frozenIndex: ReadonlyMap<string, FrozenBlock>;
+
 	/**
 	 * Constructeur privé — utilisez {@link PhoneBlockRegistry.fromFiles} ou
 	 * {@link PhoneBlockRegistry.fromRaw} pour instancier.
@@ -105,12 +110,14 @@ export class PhoneBlockRegistry {
 		shortNumberBlocks: PhoneBlock[] = [],
 		mncIndex: Map<string, MobileNetworkCode> = new Map(),
 		portabilityIndex: Map<string, PortabilityEntry> = new Map(),
+		frozenIndex: Map<string, FrozenBlock> = new Map(),
 	) {
 		this.blocks = blocks;
 		this.operatorIndex = operatorIndex;
 		this.shortNumberBlocks = shortNumberBlocks;
 		this.mncIndex = mncIndex;
 		this.portabilityIndex = portabilityIndex;
+		this.frozenIndex = frozenIndex;
 	}
 
 	// ─── Factories ─────────────────────────────────────────────────────────────
@@ -150,6 +157,7 @@ export class PhoneBlockRegistry {
 			majnfbPath?: string;
 			majmncPath?: string;
 			majportaPath?: string;
+			gelnumPath?: string;
 			extraOperatorPaths?: string[];
 		},
 	): PhoneBlockRegistry {
@@ -165,6 +173,9 @@ export class PhoneBlockRegistry {
 		const rawPorta = options?.majportaPath
 			? (parseCsv(options.majportaPath) as unknown as RawPortability[])
 			: undefined;
+		const rawFrozen = options?.gelnumPath
+			? (parseCsv(options.gelnumPath) as unknown as RawFrozenBlock[])
+			: undefined;
 
 		const extraOps: RawOperator[] = [];
 		for (const p of options?.extraOperatorPaths ?? []) {
@@ -175,6 +186,7 @@ export class PhoneBlockRegistry {
 			rawShortNumbers: rawNfb,
 			rawMnc,
 			rawPortability: rawPorta,
+			rawFrozen,
 			extraOperators: extraOps.length > 0 ? extraOps : undefined,
 		});
 	}
@@ -195,6 +207,7 @@ export class PhoneBlockRegistry {
 			rawShortNumbers?: RawNumBlock[];
 			rawMnc?: RawMobileNetworkCode[];
 			rawPortability?: RawPortability[];
+			rawFrozen?: RawFrozenBlock[];
 			extraOperators?: RawOperator[];
 		},
 	): PhoneBlockRegistry {
@@ -277,7 +290,22 @@ export class PhoneBlockRegistry {
 			}
 		}
 
-		return new PhoneBlockRegistry(blocks, operatorIndex, shortNumberBlocks, mncIndex, portabilityIndex);
+		// 6. Build frozen blocks index (GELNUM)
+		const frozenIndex = new Map<string, FrozenBlock>();
+		for (const raw of options?.rawFrozen ?? []) {
+			const blockId = String(raw.EZABPQM ?? "").trim();
+			if (blockId) {
+				frozenIndex.set(blockId, {
+					blockId,
+					type: String(raw.Type ?? "").trim(),
+					interestOpensAt: parseFrDate(String(raw["Ouverture des manifestations d'intérêts"] ?? "").trim()),
+					interestClosesAt: parseFrDate(String(raw["Clôture des manifestations d'intérêts"] ?? "").trim()),
+					attributionOpensAt: parseFrDate(String(raw["Ouverture des demandes d'attribution"] ?? "").trim()),
+				});
+			}
+		}
+
+		return new PhoneBlockRegistry(blocks, operatorIndex, shortNumberBlocks, mncIndex, portabilityIndex, frozenIndex);
 	}
 
 	// ─── Public methods ───────────────────────────────────────────────────────────
@@ -425,6 +453,27 @@ export class PhoneBlockRegistry {
 	 */
 	lookupPortability(blockId: string): PortabilityEntry | null {
 		return this.portabilityIndex.get(blockId.trim()) ?? null;
+	}
+
+	/**
+	 * Looks up a frozen number block by its EZABPQM identifier.
+	 *
+	 * Uses the GELNUM dataset.
+	 *
+	 * @param blockId - EZABPQM block identifier (e.g. "08359").
+	 * @returns {@link FrozenBlock} or `null`.
+	 */
+	lookupFrozenBlock(blockId: string): FrozenBlock | null {
+		return this.frozenIndex.get(blockId.trim()) ?? null;
+	}
+
+	/**
+	 * Returns all frozen number blocks.
+	 *
+	 * @returns Array of {@link FrozenBlock}.
+	 */
+	getFrozenBlocks(): FrozenBlock[] {
+		return Array.from(this.frozenIndex.values());
 	}
 
 	/**

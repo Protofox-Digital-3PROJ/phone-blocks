@@ -7,7 +7,8 @@
  * MAJNFB: table of short/special numbers (emergency, services).
  * MAJMNC: table of Mobile Network Codes (MCC-MNC).
  * MAJPORTA: table of number portability assignments.
- * MAJCPSN/MAJR1R2/MAJSDT: additional operator tables.
+ * MAJCPSN/MAJCPSI/MAJR1R2/MAJSDT: additional operator tables.
+ * GELNUM: table of frozen number blocks open for attribution.
  */
 
 /**
@@ -147,4 +148,36 @@ export interface ShortNumberLookupResult {
 	readonly number: string;
 	/** Found block, or `null` if the number is not a known short number. */
 	readonly block: PhoneBlock | null;
+}
+
+/**
+ * Represents a raw row from the GELNUM.csv file (frozen number blocks).
+ */
+export interface RawFrozenBlock {
+	/** Block identifier (EZABPQM). */
+	EZABPQM: string;
+	/** Type of number resource. */
+	Type: string;
+	/** Opening date for expressions of interest (DD/MM/YYYY). */
+	"Ouverture des manifestations d'intérêts": string;
+	/** Closing date for expressions of interest (DD/MM/YYYY). */
+	"Clôture des manifestations d'intérêts": string;
+	/** Opening date for attribution requests (DD/MM/YYYY). */
+	"Ouverture des demandes d'attribution": string;
+}
+
+/**
+ * Enriched frozen block entry.
+ */
+export interface FrozenBlock {
+	/** Block identifier (EZABPQM). */
+	readonly blockId: string;
+	/** Type of number resource (e.g. "Numéros polyvalents"). */
+	readonly type: string;
+	/** Opening date for expressions of interest. */
+	readonly interestOpensAt: Date;
+	/** Closing date for expressions of interest. */
+	readonly interestClosesAt: Date;
+	/** Opening date for attribution requests. */
+	readonly attributionOpensAt: Date;
 }

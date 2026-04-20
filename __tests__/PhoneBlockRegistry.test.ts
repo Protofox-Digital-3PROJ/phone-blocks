@@ -17,7 +17,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PhoneBlockRegistry } from "../src/PhoneBlockRegistry";
-import { MNC_ENTRIES, NUM_BLOCKS, OPERATORS, PORTABILITY_ENTRIES, SHORT_NUMBER_BLOCKS } from "./fixtures.js";
+import { FROZEN_BLOCKS, MNC_ENTRIES, NUM_BLOCKS, OPERATORS, PORTABILITY_ENTRIES, SHORT_NUMBER_BLOCKS } from "./fixtures.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, "..", "data");
@@ -330,5 +330,31 @@ describe("PhoneBlockRegistry — portability (MAJPORTA)", () => {
 	it("resolves operator name from operator index", () => {
 		const entry = registry.lookupPortability("7000");
 		expect(entry!.operatorName).toBe("Orange");
+	});
+});
+
+describe("PhoneBlockRegistry — frozen blocks (GELNUM)", () => {
+	const registry = PhoneBlockRegistry.fromRaw(NUM_BLOCKS, OPERATORS, {
+		rawFrozen: FROZEN_BLOCKS,
+	});
+
+	it("finds a known frozen block by EZABPQM", () => {
+		const block = registry.lookupFrozenBlock("08359");
+		expect(block).not.toBeNull();
+		expect(block!.type).toBe("Code point sémaphore national");
+	});
+
+	it("returns null for unknown frozen block", () => {
+		expect(registry.lookupFrozenBlock("99999")).toBeNull();
+	});
+
+	it("lists all frozen blocks", () => {
+		expect(registry.getFrozenBlocks()).toHaveLength(2);
+	});
+
+	it("parses dates correctly", () => {
+		const block = registry.lookupFrozenBlock("0811672");
+		expect(block!.interestOpensAt.getFullYear()).toBe(2026);
+		expect(block!.attributionOpensAt.getDate()).toBe(21);
 	});
 });
