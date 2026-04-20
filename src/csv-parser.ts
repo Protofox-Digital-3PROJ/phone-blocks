@@ -21,27 +21,27 @@ import { readFileSync } from "node:fs";
  * ```
  */
 export function parseCsv(filePath: string): Record<string, string>[] {
-  const buffer = readFileSync(filePath);
+	const buffer = readFileSync(filePath);
 
-  // Décodage latin-1 (ISO-8859-1) : chaque octet → caractère Unicode 1:1
-  const text = decodeLatin1(buffer);
+	// Décodage latin-1 (ISO-8859-1) : chaque octet → caractère Unicode 1:1
+	const text = decodeLatin1(buffer);
 
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length < 2) return [];
+	const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+	if (lines.length < 2) return [];
 
-  const headers = splitLine(lines[0]);
-  const rows: Record<string, string>[] = [];
+	const headers = splitLine(lines[0]);
+	const rows: Record<string, string>[] = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const values = splitLine(lines[i]);
-    const row: Record<string, string> = {};
-    headers.forEach((header, idx) => {
-      row[header.trim()] = (values[idx] ?? "").trim();
-    });
-    rows.push(row);
-  }
+	for (let i = 1; i < lines.length; i++) {
+		const values = splitLine(lines[i]);
+		const row: Record<string, string> = {};
+		headers.forEach((header, idx) => {
+			row[header.trim()] = (values[idx] ?? "").trim();
+		});
+		rows.push(row);
+	}
 
-  return rows;
+	return rows;
 }
 
 /**
@@ -51,11 +51,11 @@ export function parseCsv(filePath: string): Record<string, string>[] {
  * @returns Chaîne de caractères décodée.
  */
 function decodeLatin1(buf: Buffer): string {
-  let result = "";
-  for (let i = 0; i < buf.length; i++) {
-    result += String.fromCharCode(buf[i]);
-  }
-  return result;
+	let result = "";
+	for (let i = 0; i < buf.length; i++) {
+		result += String.fromCharCode(buf[i]);
+	}
+	return result;
 }
 
 /**
@@ -66,21 +66,21 @@ function decodeLatin1(buf: Buffer): string {
  * @returns Tableau de valeurs (sans les guillemets).
  */
 function splitLine(line: string): string[] {
-  const fields: string[] = [];
-  let current = "";
-  let inQuotes = false;
+	const fields: string[] = [];
+	let current = "";
+	let inQuotes = false;
 
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-    } else if (ch === ";" && !inQuotes) {
-      fields.push(current);
-      current = "";
-    } else {
-      current += ch;
-    }
-  }
-  fields.push(current);
-  return fields;
+	for (let i = 0; i < line.length; i++) {
+		const ch = line[i];
+		if (ch === '"') {
+			inQuotes = !inQuotes;
+		} else if (ch === ";" && !inQuotes) {
+			fields.push(current);
+			current = "";
+		} else {
+			current += ch;
+		}
+	}
+	fields.push(current);
+	return fields;
 }

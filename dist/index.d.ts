@@ -23,13 +23,7 @@
  *
  * @packageDocumentation
  */
-
 export { PhoneBlockRegistry } from "./PhoneBlockRegistry.js";
 export { parseCsv } from "./csv-parser.js";
-export type {
-	PhoneBlock,
-	LookupResult,
-	RawNumBlock,
-	RawOperator,
-	Territoire,
-} from "./types.js";
+export type { PhoneBlock, LookupResult, RawNumBlock, RawOperator, Territoire, } from "./types.js";
+//# sourceMappingURL=index.d.ts.map
