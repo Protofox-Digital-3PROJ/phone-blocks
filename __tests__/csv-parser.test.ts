@@ -74,7 +74,7 @@ describe("parseCsv", () => {
 		tmpFiles.push(path);
 
 		const rows = parseCsv(path);
-		expect(rows[0].Adresse).toBe("3, rue de la Paix;75001");
+		expect(rows[0]!.Adresse).toBe("3, rue de la Paix;75001");
 	});
 
 	it("décode les caractères latin-1 (accents)", () => {
@@ -85,7 +85,7 @@ describe("parseCsv", () => {
 		tmpFiles.push(path);
 
 		const rows = parseCsv(path);
-		expect(rows[0].Opérateur).toBe("Orange");
+		expect(rows[0]!.Opérateur).toBe("Orange");
 	});
 
 	it("supprime les espaces autour des clés et valeurs", () => {
@@ -94,7 +94,7 @@ describe("parseCsv", () => {
 
 		const rows = parseCsv(path);
 		expect(rows[0]).toHaveProperty("A");
-		expect(rows[0].A).toBe("val1");
+		expect(rows[0]!.A).toBe("val1");
 	});
 
 	it("gère les champs manquants en fin de ligne", () => {
@@ -102,6 +102,6 @@ describe("parseCsv", () => {
 		tmpFiles.push(path);
 
 		const rows = parseCsv(path);
-		expect(rows[0].C).toBe("");
+		expect(rows[0]!.C).toBe("");
 	});
 });

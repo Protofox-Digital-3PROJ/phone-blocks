@@ -152,7 +152,7 @@ describe("PhoneBlockRegistry — fromRaw (fixtures synthétiques)", () => {
 		it("retourne les blocs d'un opérateur connu", () => {
 			const blocks = registry.getBlocksByOperator("FRTE");
 			expect(blocks).toHaveLength(1);
-			expect(blocks[0].rangeStart).toBe(600000000);
+			expect(blocks[0]!.rangeStart).toBe(600000000);
 		});
 
 		it("est insensible à la casse", () => {
