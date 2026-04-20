@@ -4,7 +4,7 @@
  * réaliste des fichiers MAJNUM et MAJRIO de l'ARCEP.
  */
 
-import type { RawNumBlock, RawOperator } from "./src/types.js";
+import type { RawNumBlock, RawOperator } from "../src/types";
 
 /** Opérateurs fictifs couvrant les cas nominaux et limites. */
 export const OPERATORS: RawOperator[] = [
