@@ -1,9 +1,9 @@
 /**
  * @module PhoneBlockRegistry
- * @description Registre principal des blocs de numéros téléphoniques français.
+ * @description Main registry for French phone number blocks.
  *
- * Charge et indexe les fichiers MAJNUM et MAJRIO publiés par l'ARCEP sur
- * data.gouv.fr, puis expose des méthodes de recherche efficaces.
+ * Loads and indexes the MAJNUM and MAJRIO files published by ARCEP on
+ * data.gouv.fr, then exposes efficient lookup methods.
  *
  * @example
  * ```ts
@@ -27,14 +27,14 @@ import type {
 	RawOperator,
 } from "./types.js";
 
-// ─── Helpers internes ────────────────────────────────────────────────────────
+// ─── Internal helpers ────────────────────────────────────────────────────────────
 
 /**
- * Parse une date au format JJ/MM/AAAA en objet `Date`.
- * Retourne `Invalid Date` si la chaîne ne correspond pas au format attendu.
+ * Parses a date in DD/MM/YYYY format into a `Date` object.
+ * Returns `Invalid Date` if the string does not match the expected format.
  *
- * @param raw - Chaîne de date brute.
- * @returns Objet `Date`.
+ * @param raw - Raw date string.
+ * @returns `Date` object.
  */
 function parseFrDate(raw: string): Date {
 	const [day, month, year] = raw.split("/");
@@ -43,15 +43,15 @@ function parseFrDate(raw: string): Date {
 }
 
 /**
- * Normalise un numéro de téléphone français en 9 chiffres (sans le `0` initial).
+ * Normalizes a French phone number to 9 digits (without the leading `0`).
  *
- * Exemples acceptés : `"0612345678"`, `"+33612345678"`, `"612345678"`.
+ * Accepted formats: `"0612345678"`, `"+33612345678"`, `"612345678"`.
  *
- * @param input - Numéro saisi par l'utilisateur (espaces et tirets tolérés).
- * @returns Chaîne de 9 chiffres, ou `null` si le format est invalide.
+ * @param input - User-entered number (spaces and dashes are tolerated).
+ * @returns 9-digit string, or `null` if the format is invalid.
  */
 function normalizePhoneNumber(input: string): string | null {
-	// Retire tout ce qui n'est pas un chiffre ou +
+	// Remove everything that is not a digit or +
 	const digits = input.replace(/[\s\-.]/g, "");
 
 	if (/^\+33\d{9}$/.test(digits)) return digits.slice(3); // +33XXXXXXXXX
@@ -96,13 +96,13 @@ export class PhoneBlockRegistry {
 	// ─── Factories ─────────────────────────────────────────────────────────────
 
 	/**
-	 * Construit un registre en lisant directement les fichiers CSV de l'ARCEP.
+	 * Builds a registry by reading ARCEP CSV files directly.
 	 *
-	 * @param majnumPath - Chemin vers `MAJNUM.csv`.
-	 * @param majrioPath - Chemin vers `MAJRIO.csv`.
-	 * @returns Instance de {@link PhoneBlockRegistry} prête à l'emploi.
+	 * @param majnumPath - Path to `MAJNUM.csv`.
+	 * @param majrioPath - Path to `MAJRIO.csv`.
+	 * @returns Ready-to-use {@link PhoneBlockRegistry} instance.
 	 *
-	 * @throws {Error} Si l'un des fichiers est illisible ou mal formé.
+	 * @throws {Error} If either file is unreadable or malformed.
 	 *
 	 * @example
 	 * ```ts
@@ -119,18 +119,18 @@ export class PhoneBlockRegistry {
 	}
 
 	/**
-	 * Construit un registre depuis des données déjà parsées (utile pour les tests
-	 * ou les environnements sans accès filesystem).
+	 * Builds a registry from pre-parsed data (useful for tests
+	 * or environments without filesystem access).
 	 *
-	 * @param rawBlocks - Lignes brutes de MAJNUM.
-	 * @param rawOperators - Lignes brutes de MAJRIO.
-	 * @returns Instance de {@link PhoneBlockRegistry}.
+	 * @param rawBlocks - Raw MAJNUM rows.
+	 * @param rawOperators - Raw MAJRIO rows.
+	 * @returns {@link PhoneBlockRegistry} instance.
 	 */
 	static fromRaw(
 		rawBlocks: RawNumBlock[],
 		rawOperators: RawOperator[],
 	): PhoneBlockRegistry {
-		// 1. Construit l'index opérateurs : Code Attributaire → Attributaire
+		// 1. Build operator index: Code Attributaire → Attributaire
 		const operatorIndex = new Map<string, string>();
 		for (const op of rawOperators) {
 			const code = op["Code Attributaire"]?.trim();
@@ -138,7 +138,7 @@ export class PhoneBlockRegistry {
 			if (code && name) operatorIndex.set(code, name);
 		}
 
-		// 2. Transforme et trie les blocs
+		// 2. Transform and sort blocks
 		const blocks: PhoneBlock[] = rawBlocks
 			.map((raw): PhoneBlock => {
 				const code = String(raw.Mnémo ?? "").trim();
@@ -157,23 +157,23 @@ export class PhoneBlockRegistry {
 		return new PhoneBlockRegistry(blocks, operatorIndex);
 	}
 
-	// ─── Méthodes publiques ─────────────────────────────────────────────────────
+	// ─── Public methods ───────────────────────────────────────────────────────────
 
 	/**
-	 * Recherche le bloc de numérotation auquel appartient un numéro de téléphone.
+	 * Finds the number block to which a phone number belongs.
 	 *
-	 * La recherche est effectuée par **dichotomie** (O(log n)) sur les tranches
-	 * triées par `rangeStart`.
+	 * The search is performed using **binary search** (O(log n)) on ranges
+	 * sorted by `rangeStart`.
 	 *
-	 * @param phoneNumber - Numéro à rechercher (formats acceptés :
+	 * @param phoneNumber - Number to look up (accepted formats:
 	 *   `"0612345678"`, `"+33612345678"`, `"6 12 34 56 78"`).
-	 * @returns {@link LookupResult} avec le bloc trouvé ou `null`.
+	 * @returns {@link LookupResult} with the found block or `null`.
 	 *
 	 * @example
 	 * ```ts
 	 * const { block } = registry.lookup("0612345678");
 	 * if (block) {
-	 *   console.log(`Opérateur : ${block.operatorName}`);
+	 *   console.log(`Operator: ${block.operatorName}`);
 	 * }
 	 * ```
 	 */
@@ -183,7 +183,7 @@ export class PhoneBlockRegistry {
 			return { normalizedNumber: phoneNumber, block: null };
 		}
 
-		// Le numéro interne ARCEP est sur 9 chiffres → on compare directement
+		// The internal ARCEP number is 9 digits → compare directly
 		const numericValue = Number(normalized);
 		const block = this.binarySearch(numericValue);
 
@@ -191,10 +191,10 @@ export class PhoneBlockRegistry {
 	}
 
 	/**
-	 * Retourne tous les blocs appartenant à un opérateur donné.
+	 * Returns all blocks belonging to a given operator.
 	 *
-	 * @param operatorCode - Code mnémonique (ex : `"FRTE"`, `"SFR0"`).
-	 * @returns Tableau de {@link PhoneBlock} (peut être vide).
+	 * @param operatorCode - Mnemonic code (e.g. `"FRTE"`, `"SFR0"`).
+	 * @returns Array of {@link PhoneBlock} (may be empty).
 	 */
 	getBlocksByOperator(operatorCode: string): PhoneBlock[] {
 		const code = operatorCode.toUpperCase().trim();
@@ -202,9 +202,9 @@ export class PhoneBlockRegistry {
 	}
 
 	/**
-	 * Liste tous les opérateurs présents dans MAJRIO.
+	 * Lists all operators present in MAJRIO.
 	 *
-	 * @returns Tableau de paires `{ code, name }` triées par code.
+	 * @returns Array of `{ code, name }` pairs sorted by code.
 	 */
 	getOperators(): Array<{ code: string; name: string }> {
 		return Array.from(this.operatorIndex.entries())
@@ -213,14 +213,14 @@ export class PhoneBlockRegistry {
 	}
 
 	/**
-	 * Retourne des statistiques globales sur le registre chargé.
+	 * Returns global statistics about the loaded registry.
 	 *
-	 * @returns Objet de statistiques.
+	 * @returns Statistics object.
 	 *
 	 * @example
 	 * ```ts
 	 * const stats = registry.getStats();
-	 * console.log(`${stats.totalBlocks} blocs, ${stats.totalOperators} opérateurs`);
+	 * console.log(`${stats.totalBlocks} blocks, ${stats.totalOperators} operators`);
 	 * ```
 	 */
 	getStats(): {
@@ -246,19 +246,19 @@ export class PhoneBlockRegistry {
 	}
 
 	/**
-	 * Nombre total de blocs chargés.
+	 * Total number of loaded blocks.
 	 */
 	get size(): number {
 		return this.blocks.length;
 	}
 
-	// ─── Méthodes privées ───────────────────────────────────────────────────────
+	// ─── Private methods ──────────────────────────────────────────────────────────
 
 	/**
-	 * Recherche dichotomique d'un numéro dans les tranches triées.
+	 * Binary search for a number within the sorted ranges.
 	 *
-	 * @param value - Valeur numérique du numéro (9 chiffres sans le `0`).
-	 * @returns Le {@link PhoneBlock} correspondant, ou `null`.
+	 * @param value - Numeric value of the number (9 digits without the `0`).
+	 * @returns The matching {@link PhoneBlock}, or `null`.
 	 */
 	private binarySearch(value: number): PhoneBlock | null {
 		let lo = 0;

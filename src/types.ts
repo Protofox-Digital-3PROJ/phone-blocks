@@ -1,78 +1,78 @@
 /**
  * @module types
- * @description Définitions de types pour les données de l'ARCEP (data.gouv.fr).
+ * @description Type definitions for ARCEP data (data.gouv.fr).
  *
- * MAJNUM : table des tranches de numéros attribuées.
- * MAJRIO : table des attributaires (opérateurs / ressources).
+ * MAJNUM: table of assigned number ranges.
+ * MAJRIO: table of assignees (operators / resources).
  */
 
 /**
- * Territoire géographique associé à un bloc de numéros.
+ * Geographic territory associated with a number block.
  */
 export type Territoire = "Métropole" | "DOM" | "COM" | string;
 
 /**
- * Représente une ligne brute du fichier MAJNUM.csv,
- * telle qu'elle arrive après parsing.
+ * Represents a raw row from the MAJNUM.csv file,
+ * as returned by the parser.
  */
 export interface RawNumBlock {
-	/** Identifiant numérique du bloc (colonne EZABPQM). */
+	/** Numeric block identifier (EZABPQM column). */
 	EZABPQM: number;
-	/** Premier numéro de la tranche (inclus). */
+	/** First number in the range (inclusive). */
 	Tranche_Debut: number;
-	/** Dernier numéro de la tranche (inclus). */
+	/** Last number in the range (inclusive). */
 	Tranche_Fin: number;
-	/** Code mnémonique à 4 lettres de l'attributaire. */
+	/** 4-letter mnemonic code of the assignee. */
 	Mnémo: string;
-	/** Territoire d'affectation du bloc. */
+	/** Territory assigned to the block. */
 	Territoire: Territoire;
-	/** Date d'attribution au format JJ/MM/AAAA. */
+	/** Assignment date in DD/MM/YYYY format. */
 	Date_Attribution: string;
 }
 
 /**
- * Représente une ligne brute du fichier MAJRIO.csv,
- * telle qu'elle arrive après parsing.
+ * Represents a raw row from the MAJRIO.csv file,
+ * as returned by the parser.
  */
 export interface RawOperator {
-	/** Code ressource court (ex : "F0", "SFR0"). */
+	/** Short resource code (e.g. "F0", "SFR0"). */
 	Ressource: string;
-	/** Code attributaire à 4 lettres (ex : "FRTE", "SFR0"). */
+	/** 4-letter assignee code (e.g. "FRTE", "SFR0"). */
 	"Code Attributaire": string;
-	/** Nom complet de l'opérateur. */
+	/** Full operator name. */
 	Attributaire: string;
-	/** Date d'effet de l'attribution au format JJ/MM/AAAA. */
+	/** Assignment effective date in DD/MM/YYYY format. */
 	"Date d'effet (attribution)": string;
-	/** Numéro de la décision ARCEP. */
+	/** ARCEP decision number. */
 	"N° décision d'attribution": string;
 }
 
 /**
- * Bloc de numéros enrichi : tranche + opérateur résolu.
+ * Enriched phone number block: range + resolved operator.
  */
 export interface PhoneBlock {
-	/** Identifiant EZABPQM du bloc. */
+	/** EZABPQM block identifier. */
 	readonly id: number;
-	/** Premier numéro de la tranche (inclus). */
+	/** First number in the range (inclusive). */
 	readonly rangeStart: number;
-	/** Dernier numéro de la tranche (inclus). */
+	/** Last number in the range (inclusive). */
 	readonly rangeEnd: number;
-	/** Code mnémonique de l'attributaire (ex : "FRTE"). */
+	/** Assignee mnemonic code (e.g. "FRTE"). */
 	readonly operatorCode: string;
-	/** Nom lisible de l'opérateur, si disponible dans MAJRIO. */
+	/** Human-readable operator name, if available in MAJRIO. */
 	readonly operatorName: string | null;
-	/** Territoire d'affectation. */
+	/** Assigned territory. */
 	readonly territoire: Territoire;
-	/** Date d'attribution (objet Date). */
+	/** Assignment date (Date object). */
 	readonly attributedAt: Date;
 }
 
 /**
- * Résultat d'une recherche par numéro.
+ * Result of a phone number lookup.
  */
 export interface LookupResult {
-	/** Numéro interrogé, normalisé sur 9 chiffres (sans le 0 initial). */
+	/** Queried number, normalized to 9 digits (without the leading 0). */
 	readonly normalizedNumber: string;
-	/** Bloc trouvé, ou `null` si le numéro n'appartient à aucune tranche. */
+	/** Found block, or `null` if the number does not belong to any range. */
 	readonly block: PhoneBlock | null;
 }

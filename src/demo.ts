@@ -1,40 +1,40 @@
 /**
  * @file demo.ts
- * @description Script de démonstration du registre téléphonique.
+ * @description Demo script for the phone block registry.
  *
- * Exécution : `npm run dev` (utilise tsx pour la transpilation à la volée)
+ * Run with: `npm run dev` (uses tsx for on-the-fly transpilation)
  */
 
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { join, dirname } from "node:path";
 import { PhoneBlockRegistry } from "./index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, "..", "data");
 
-// ─── Chargement ──────────────────────────────────────────────────────────────
+// ─── Loading ────────────────────────────────────────────────────────────────────
 
-console.log("📂 Chargement des fichiers ARCEP…");
+console.log("📂 Loading ARCEP files…");
 const registry = PhoneBlockRegistry.fromFiles(
 	join(DATA_DIR, "MAJNUM.csv"),
 	join(DATA_DIR, "MAJRIO.csv"),
 );
 
-// ─── Statistiques ────────────────────────────────────────────────────────────
+// ─── Statistics ─────────────────────────────────────────────────────────────────
 
 const stats = registry.getStats();
-console.log("\n📊 Statistiques du registre");
+console.log("\n📊 Registry statistics");
 console.log("─".repeat(40));
 console.log(
-	`  Blocs chargés       : ${stats.totalBlocks.toLocaleString("fr-FR")}`,
+	`  Loaded blocks       : ${stats.totalBlocks.toLocaleString("fr-FR")}`,
 );
-console.log(`  Opérateurs          : ${stats.totalOperators}`);
+console.log(`  Operators           : ${stats.totalOperators}`);
 console.log(
-	`  Numéros couverts    : ${stats.totalNumbers.toLocaleString("fr-FR")}`,
+	`  Covered numbers     : ${stats.totalNumbers.toLocaleString("fr-FR")}`,
 );
-console.log(`  Blocs sans opérateur: ${stats.blocksWithUnknownOperator}`);
+console.log(`  Blocks w/o operator : ${stats.blocksWithUnknownOperator}`);
 
-// ─── Exemples de lookups ─────────────────────────────────────────────────────
+// ─── Lookup examples ───────────────────────────────────────────────────────────
 
 const testNumbers = [
 	"0612345678",
@@ -42,15 +42,15 @@ const testNumbers = [
 	"0123456789",
 	"0800 000 000",
 	"0699999999",
-	"9999999999", // invalide
+	"9999999999", // invalid
 ];
 
-console.log("\n🔍 Recherches par numéro");
+console.log("\n🔍 Number lookups");
 console.log("─".repeat(40));
 for (const num of testNumbers) {
 	const result = registry.lookup(num);
 	if (!result.block) {
-		console.log(`  ${num.padEnd(22)} → ❌ non trouvé`);
+		console.log(`  ${num.padEnd(22)} → ❌ not found`);
 	} else {
 		const op = result.block.operatorName ?? result.block.operatorCode;
 		const territoire = result.block.territoire;
@@ -58,21 +58,21 @@ for (const num of testNumbers) {
 	}
 }
 
-// ─── Listing opérateurs ───────────────────────────────────────────────────────
+// ─── Operator listing ──────────────────────────────────────────────────────────
 
-console.log("\n📋 10 premiers opérateurs (ordre alphabétique)");
+console.log("\n📋 First 10 operators (alphabetical order)");
 console.log("─".repeat(40));
 const operators = registry.getOperators().slice(0, 10);
 for (const op of operators) {
 	console.log(`  ${op.code.padEnd(8)} → ${op.name}`);
 }
 
-// ─── Blocs d'un opérateur spécifique ─────────────────────────────────────────
+// ─── Blocks for a specific operator ────────────────────────────────────────────
 
 const TARGET_CODE = "FRTE";
 const orangeBlocks = registry.getBlocksByOperator(TARGET_CODE);
 console.log(
-	`\n📞 Blocs de ${TARGET_CODE} (Orange) : ${orangeBlocks.length} tranches`,
+	`\n📞 ${TARGET_CODE} (Orange) blocks: ${orangeBlocks.length} ranges`,
 );
 console.log("─".repeat(40));
 orangeBlocks.slice(0, 5).forEach((b) => {
@@ -81,5 +81,5 @@ orangeBlocks.slice(0, 5).forEach((b) => {
 	);
 });
 if (orangeBlocks.length > 5) {
-	console.log(`  … et ${orangeBlocks.length - 5} autres`);
+	console.log(`  … and ${orangeBlocks.length - 5} more`);
 }

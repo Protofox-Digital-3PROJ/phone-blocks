@@ -1,6 +1,6 @@
 /**
  * @file csv-parser.test.ts
- * @description Tests unitaires du parser CSV.
+ * @description Unit tests for the CSV parser.
  */
 
 import { unlinkSync, writeFileSync } from "node:fs";
@@ -11,7 +11,7 @@ import { parseCsv } from "../src/csv-parser";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Écrit un fichier temporaire et retourne son chemin. */
+/** Writes a temporary file and returns its path. */
 function writeTmp(name: string, content: string): string {
 	const path = join(tmpdir(), name);
 	writeFileSync(path, Buffer.from(content, "latin1"));
@@ -33,7 +33,7 @@ describe("parseCsv", () => {
 		}
 	});
 
-	it("parse un CSV simple avec séparateur `;`", () => {
+	it("parses a simple CSV with `;` separator", () => {
 		const path = writeTmp("simple.csv", "A;B;C\n1;2;3\n4;5;6\n");
 		tmpFiles.push(path);
 
@@ -43,21 +43,21 @@ describe("parseCsv", () => {
 		expect(rows[1]).toEqual({ A: "4", B: "5", C: "6" });
 	});
 
-	it("retourne un tableau vide si le fichier n'a qu'une ligne (en-tête seul)", () => {
+	it("returns an empty array if the file has only one line (header only)", () => {
 		const path = writeTmp("header-only.csv", "A;B;C\n");
 		tmpFiles.push(path);
 
 		expect(parseCsv(path)).toHaveLength(0);
 	});
 
-	it("retourne un tableau vide si le fichier est vide", () => {
+	it("returns an empty array if the file is empty", () => {
 		const path = writeTmp("empty.csv", "");
 		tmpFiles.push(path);
 
 		expect(parseCsv(path)).toHaveLength(0);
 	});
 
-	it("gère les fins de ligne Windows (CRLF)", () => {
+	it("handles Windows line endings (CRLF)", () => {
 		const path = writeTmp("crlf.csv", "X;Y\r\nhello;world\r\n");
 		tmpFiles.push(path);
 
@@ -66,7 +66,7 @@ describe("parseCsv", () => {
 		expect(rows[0]).toEqual({ X: "hello", Y: "world" });
 	});
 
-	it("gère les champs entre guillemets contenant un `;`", () => {
+	it("handles quoted fields containing `;`", () => {
 		const path = writeTmp(
 			"quoted.csv",
 			'Nom;Adresse\nDupont;"3, rue de la Paix;75001"\n',
@@ -77,8 +77,8 @@ describe("parseCsv", () => {
 		expect(rows[0]!.Adresse).toBe("3, rue de la Paix;75001");
 	});
 
-	it("décode les caractères latin-1 (accents)", () => {
-		// "Opérateur" en latin-1 : é = 0xe9
+	it("decodes latin-1 characters (accents)", () => {
+		// "Opérateur" in latin-1: é = 0xe9
 		const content = Buffer.from("Op\xe9rateur;Code\nOrange;FRTE\n", "latin1");
 		const path = join(tmpdir(), "latin1.csv");
 		writeFileSync(path, content);
@@ -88,7 +88,7 @@ describe("parseCsv", () => {
 		expect(rows[0]!.Opérateur).toBe("Orange");
 	});
 
-	it("supprime les espaces autour des clés et valeurs", () => {
+	it("trims spaces around keys and values", () => {
 		const path = writeTmp("spaces.csv", " A ; B \n val1 ; val2 \n");
 		tmpFiles.push(path);
 
@@ -97,7 +97,7 @@ describe("parseCsv", () => {
 		expect(rows[0]!.A).toBe("val1");
 	});
 
-	it("gère les champs manquants en fin de ligne", () => {
+	it("handles missing fields at end of line", () => {
 		const path = writeTmp("missing.csv", "A;B;C\n1;2\n");
 		tmpFiles.push(path);
 

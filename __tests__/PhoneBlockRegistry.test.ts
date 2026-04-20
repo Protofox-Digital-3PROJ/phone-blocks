@@ -1,16 +1,16 @@
 /**
  * @file PhoneBlockRegistry.test.ts
- * @description Tests unitaires de la classe PhoneBlockRegistry.
+ * @description Unit tests for the PhoneBlockRegistry class.
  *
- * Couvre :
- * - La factory `fromRaw` (données synthétiques)
- * - La factory `fromFiles` (fichiers réels data.gouv.fr)
- * - La normalisation des numéros de téléphone
- * - La recherche dichotomique (`lookup`)
- * - Les requêtes par opérateur (`getBlocksByOperator`)
- * - Le listing d'opérateurs (`getOperators`)
- * - Les statistiques (`getStats`)
- * - Les cas limites et valeurs invalides
+ * Covers:
+ * - The `fromRaw` factory (synthetic data)
+ * - The `fromFiles` factory (real data.gouv.fr files)
+ * - Phone number normalization
+ * - Binary search (`lookup`)
+ * - Operator queries (`getBlocksByOperator`)
+ * - Operator listing (`getOperators`)
+ * - Statistics (`getStats`)
+ * - Edge cases and invalid values
  */
 
 import { dirname, join } from "node:path";
@@ -22,125 +22,125 @@ import { NUM_BLOCKS, OPERATORS } from "./fixtures.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, "..", "data");
 
-// ─── Registre construit depuis les fixtures ───────────────────────────────────
+// ─── Registry built from fixtures ───────────────────────────────────────────────
 
-describe("PhoneBlockRegistry — fromRaw (fixtures synthétiques)", () => {
+describe("PhoneBlockRegistry — fromRaw (synthetic fixtures)", () => {
 	const registry = PhoneBlockRegistry.fromRaw(NUM_BLOCKS, OPERATORS);
 
 	// ── Construction ────────────────────────────────────────────────────────────
 
 	describe("construction", () => {
-		it("charge le bon nombre de blocs", () => {
+		it("loads the correct number of blocks", () => {
 			expect(registry.size).toBe(4);
 		});
 
-		it("résout les noms d'opérateurs depuis MAJRIO", () => {
+		it("resolves operator names from MAJRIO", () => {
 			const { block } = registry.lookup("0600000000");
 			expect(block?.operatorName).toBe("Orange");
 		});
 
-		it("expose `null` pour un code opérateur absent de MAJRIO", () => {
+		it("exposes `null` for an operator code absent from MAJRIO", () => {
 			const { block } = registry.lookup("0800000000");
 			expect(block?.operatorCode).toBe("UNKN");
 			expect(block?.operatorName).toBeNull();
 		});
 	});
 
-	// ── Normalisation des numéros ────────────────────────────────────────────────
+	// ── Number normalization ────────────────────────────────────────────────────────
 
-	describe("lookup — normalisation des formats", () => {
+	describe("lookup — format normalization", () => {
 		const cases: Array<[string, string | null]> = [
-			["0612345678", "612345678"], // format standard
-			["+33612345678", "612345678"], // E.164 sans espace
-			["+33 6 12 34 56 78", "612345678"], // E.164 avec espaces
-			["06-12-34-56-78", "612345678"], // tirets
-			["06.12.34.56.78", "612345678"], // points
-			["6 12 34 56 78", "612345678"], // 9 chiffres avec espaces
+			["0612345678", "612345678"], // standard format
+			["+33612345678", "612345678"], // E.164 without spaces
+			["+33 6 12 34 56 78", "612345678"], // E.164 with spaces
+			["06-12-34-56-78", "612345678"], // dashes
+			["06.12.34.56.78", "612345678"], // dots
+			["6 12 34 56 78", "612345678"], // 9 digits with spaces
 		];
 
-		it.each(cases)("normalise « %s » → %s", (input, expected) => {
+		it.each(cases)("normalizes « %s » → %s", (input, expected) => {
 			const result = registry.lookup(input);
 			expect(result.normalizedNumber).toBe(expected ?? input);
 		});
 	});
 
-	// ── Recherches valides ───────────────────────────────────────────────────────
+	// ── Valid lookups ─────────────────────────────────────────────────────────────
 
-	describe("lookup — numéros dans les tranches", () => {
-		it("trouve le premier numéro d'une tranche (borne basse)", () => {
+	describe("lookup — numbers within ranges", () => {
+		it("finds the first number of a range (lower bound)", () => {
 			const { block } = registry.lookup("0600000000");
 			expect(block).not.toBeNull();
 			expect(block!.operatorCode).toBe("FRTE");
 		});
 
-		it("trouve le dernier numéro d'une tranche (borne haute)", () => {
+		it("finds the last number of a range (upper bound)", () => {
 			const { block } = registry.lookup("0609999999");
 			expect(block?.operatorCode).toBe("FRTE");
 		});
 
-		it("trouve un numéro au milieu d'une tranche", () => {
+		it("finds a number in the middle of a range", () => {
 			const { block } = registry.lookup("0615000000");
 			expect(block?.operatorCode).toBe("SFR0");
 			expect(block?.operatorName).toBe("Société française du radiotéléphone");
 		});
 
-		it("trouve un numéro dans une tranche DOM", () => {
+		it("finds a number in a DOM range", () => {
 			const { block } = registry.lookup("0700000001");
 			expect(block?.operatorCode).toBe("BYGT");
 			expect(block?.territoire).toBe("DOM");
 		});
 
-		it("retourne le bon territoire", () => {
+		it("returns the correct territory", () => {
 			const { block } = registry.lookup("0700000000");
 			expect(block?.territoire).toBe("DOM");
 		});
 
-		it("retourne une date d'attribution valide", () => {
+		it("returns a valid assignment date", () => {
 			const { block } = registry.lookup("0600000000");
 			expect(block?.attributedAt).toBeInstanceOf(Date);
 			expect(block?.attributedAt.getFullYear()).toBe(2017);
 		});
 	});
 
-	// ── Numéros hors tranche ─────────────────────────────────────────────────────
+	// ── Numbers outside ranges ─────────────────────────────────────────────────────
 
-	describe("lookup — numéros hors des tranches", () => {
-		it("retourne null pour un numéro entre deux tranches", () => {
+	describe("lookup — numbers outside ranges", () => {
+		it("returns null for a number between two ranges", () => {
 			const { block } = registry.lookup("0650000000");
 			expect(block).toBeNull();
 		});
 
-		it("retourne null pour un numéro avant toutes les tranches", () => {
+		it("returns null for a number before all ranges", () => {
 			const { block } = registry.lookup("0100000000");
 			expect(block).toBeNull();
 		});
 
-		it("retourne null pour un numéro après toutes les tranches", () => {
+		it("returns null for a number after all ranges", () => {
 			const { block } = registry.lookup("0999999999");
 			expect(block).toBeNull();
 		});
 	});
 
-	// ── Entrées invalides ────────────────────────────────────────────────────────
+	// ── Invalid inputs ────────────────────────────────────────────────────────────
 
-	describe("lookup — entrées invalides", () => {
-		it("retourne block=null pour une chaîne vide", () => {
+	describe("lookup — invalid inputs", () => {
+		it("returns block=null for an empty string", () => {
 			expect(registry.lookup("").block).toBeNull();
 		});
 
-		it("retourne block=null pour un numéro trop court", () => {
+		it("returns block=null for a number that is too short", () => {
 			expect(registry.lookup("0612").block).toBeNull();
 		});
 
-		it("retourne block=null pour un numéro trop long", () => {
+		it("returns block=null for a number that is too long", () => {
 			expect(registry.lookup("06123456789").block).toBeNull();
 		});
 
-		it("retourne block=null pour des caractères non numériques", () => {
+		it("returns block=null for non-numeric characters", () => {
 			expect(registry.lookup("abcdefghij").block).toBeNull();
 		});
 
-		it("conserve l'input original dans normalizedNumber quand le format est invalide", () => {
+		it("preserves original input in normalizedNumber when format is invalid", () => {
 			const result = registry.lookup("INVALID");
 			expect(result.normalizedNumber).toBe("INVALID");
 		});
@@ -149,19 +149,19 @@ describe("PhoneBlockRegistry — fromRaw (fixtures synthétiques)", () => {
 	// ── getBlocksByOperator ──────────────────────────────────────────────────────
 
 	describe("getBlocksByOperator", () => {
-		it("retourne les blocs d'un opérateur connu", () => {
+		it("returns blocks for a known operator", () => {
 			const blocks = registry.getBlocksByOperator("FRTE");
 			expect(blocks).toHaveLength(1);
 			expect(blocks[0]!.rangeStart).toBe(600000000);
 		});
 
-		it("est insensible à la casse", () => {
+		it("is case-insensitive", () => {
 			const lower = registry.getBlocksByOperator("frte");
 			const upper = registry.getBlocksByOperator("FRTE");
 			expect(lower).toHaveLength(upper.length);
 		});
 
-		it("retourne un tableau vide pour un code inconnu", () => {
+		it("returns an empty array for an unknown code", () => {
 			expect(registry.getBlocksByOperator("XXXX")).toHaveLength(0);
 		});
 	});
@@ -169,18 +169,18 @@ describe("PhoneBlockRegistry — fromRaw (fixtures synthétiques)", () => {
 	// ── getOperators ─────────────────────────────────────────────────────────────
 
 	describe("getOperators", () => {
-		it("retourne tous les opérateurs de MAJRIO", () => {
+		it("returns all operators from MAJRIO", () => {
 			const ops = registry.getOperators();
 			expect(ops).toHaveLength(OPERATORS.length);
 		});
 
-		it("est trié par code alphabétique", () => {
+		it("is sorted by alphabetical code", () => {
 			const ops = registry.getOperators();
 			const codes = ops.map((o) => o.code);
 			expect(codes).toEqual([...codes].sort());
 		});
 
-		it("chaque entrée possède code et name", () => {
+		it("each entry has code and name", () => {
 			for (const op of registry.getOperators()) {
 				expect(op.code).toBeTruthy();
 				expect(op.name).toBeTruthy();
@@ -191,31 +191,31 @@ describe("PhoneBlockRegistry — fromRaw (fixtures synthétiques)", () => {
 	// ── getStats ─────────────────────────────────────────────────────────────────
 
 	describe("getStats", () => {
-		it("compte le bon nombre de blocs", () => {
+		it("counts the correct number of blocks", () => {
 			expect(registry.getStats().totalBlocks).toBe(4);
 		});
 
-		it("compte le bon nombre d'opérateurs", () => {
+		it("counts the correct number of operators", () => {
 			expect(registry.getStats().totalOperators).toBe(OPERATORS.length);
 		});
 
-		it("calcule correctement le total de numéros", () => {
+		it("correctly calculates the total number count", () => {
 			// (609999999-600000000+1) + (619999999-610000000+1)
 			// + (709999999-700000000+1) + (800000000-800000000+1)
 			const expected = 10_000_000 + 10_000_000 + 10_000_000 + 1;
 			expect(registry.getStats().totalNumbers).toBe(expected);
 		});
 
-		it("compte les blocs sans opérateur connu", () => {
-			// UNKN n'est pas dans MAJRIO → 1 bloc sans opérateur
+		it("counts blocks without a known operator", () => {
+			// UNKN is not in MAJRIO → 1 block without operator
 			expect(registry.getStats().blocksWithUnknownOperator).toBe(1);
 		});
 	});
 });
 
-// ─── Registre construit depuis les vrais fichiers ─────────────────────────────
+// ─── Registry built from real files ─────────────────────────────────────────────
 
-describe("PhoneBlockRegistry — fromFiles (données réelles ARCEP)", () => {
+describe("PhoneBlockRegistry — fromFiles (real ARCEP data)", () => {
 	let registry: PhoneBlockRegistry;
 
 	beforeAll(() => {
@@ -225,37 +225,37 @@ describe("PhoneBlockRegistry — fromFiles (données réelles ARCEP)", () => {
 		);
 	});
 
-	it("charge plus de 10 000 blocs", () => {
+	it("loads more than 10,000 blocks", () => {
 		expect(registry.size).toBeGreaterThan(10_000);
 	});
 
-	it("résout l'opérateur sur un numéro mobile 06 connu", () => {
+	it("resolves the operator on a known 06 mobile number", () => {
 		const { block } = registry.lookup("0612345678");
 		expect(block).not.toBeNull();
 		expect(block!.operatorName).toBeTruthy();
 	});
 
-	it("résout Bouygues Telecom sur un numéro 07 connu", () => {
+	it("resolves Bouygues Telecom on a known 07 number", () => {
 		const { block } = registry.lookup("0750000000");
 		expect(block).not.toBeNull();
 		expect(block!.operatorName).toBe("Bouygues Telecom");
 	});
 
-	it("résout Orange sur le numéro 0800000000 (services spéciaux)", () => {
+	it("resolves Orange on number 0800000000 (special services)", () => {
 		const { block } = registry.lookup("0800000000");
 		expect(block).not.toBeNull();
 		expect(block!.operatorName).toBe("Orange");
 	});
 
-	it("retourne null pour un numéro impossible", () => {
+	it("returns null for an impossible number", () => {
 		expect(registry.lookup("0000000000").block).toBeNull();
 	});
 
-	it("couvre plus de 400 millions de numéros", () => {
+	it("covers more than 400 million numbers", () => {
 		expect(registry.getStats().totalNumbers).toBeGreaterThan(400_000_000);
 	});
 
-	it("recense au moins 100 opérateurs distincts", () => {
+	it("lists at least 100 distinct operators", () => {
 		expect(registry.getOperators().length).toBeGreaterThan(100);
 	});
 });

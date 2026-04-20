@@ -1,12 +1,12 @@
 /**
  * @file fixtures.ts
- * @description Données de test synthétiques représentant un sous-ensemble
- * réaliste des fichiers MAJNUM et MAJRIO de l'ARCEP.
+ * @description Synthetic test data representing a realistic subset
+ * of ARCEP's MAJNUM and MAJRIO files.
  */
 
 import type { RawNumBlock, RawOperator } from "../src/types";
 
-/** Opérateurs fictifs couvrant les cas nominaux et limites. */
+/** Fictional operators covering nominal and edge cases. */
 export const OPERATORS: RawOperator[] = [
 	{
 		Ressource: "F0",
@@ -32,13 +32,13 @@ export const OPERATORS: RawOperator[] = [
 ];
 
 /**
- * Blocs numériques synthétiques.
+ * Synthetic number blocks.
  *
- * Tranches :
+ * Ranges:
  * - 600000000 → 609999999  (FRTE / Orange)
  * - 610000000 → 619999999  (SFR0)
  * - 700000000 → 709999999  (BYGT / Bouygues)
- * - 800000000 → 800000000  (UNKN → opérateur absent de MAJRIO)
+ * - 800000000 → 800000000  (UNKN → operator absent from MAJRIO)
  */
 export const NUM_BLOCKS: RawNumBlock[] = [
 	{

@@ -1,18 +1,18 @@
 /**
  * @module csv-parser
- * @description Utilitaire léger de parsing CSV/latin-1 sans dépendance externe.
+ * @description Lightweight CSV/latin-1 parser with no external dependencies.
  *
- * Gère le séparateur `;`, l'encodage latin-1 (ISO-8859-1) utilisé par l'ARCEP,
- * et les lignes avec des champs vides.
+ * Handles the `;` separator, latin-1 (ISO-8859-1) encoding used by ARCEP,
+ * and lines with empty fields.
  */
 
 import { readFileSync } from "node:fs";
 
 /**
- * Parse un fichier CSV encodé en latin-1 avec séparateur `;`.
+ * Parses a latin-1 encoded CSV file with `;` separator.
  *
- * @param filePath - Chemin absolu ou relatif vers le fichier `.csv`.
- * @returns Tableau d'objets dont les clés sont les en-têtes de la première ligne.
+ * @param filePath - Absolute or relative path to the `.csv` file.
+ * @returns Array of objects whose keys are the headers from the first line.
  *
  * @example
  * ```ts
@@ -23,7 +23,7 @@ import { readFileSync } from "node:fs";
 export function parseCsv(filePath: string): Record<string, string>[] {
 	const buffer = readFileSync(filePath);
 
-	// Décodage latin-1 (ISO-8859-1) : chaque octet → caractère Unicode 1:1
+	// Latin-1 (ISO-8859-1) decoding: each byte maps 1:1 to a Unicode character
 	const text = decodeLatin1(buffer);
 
 	const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
@@ -45,10 +45,10 @@ export function parseCsv(filePath: string): Record<string, string>[] {
 }
 
 /**
- * Décode un `Buffer` encodé en ISO-8859-1 (latin-1) en chaîne Unicode.
+ * Decodes an ISO-8859-1 (latin-1) encoded `Buffer` into a Unicode string.
  *
- * @param buf - Buffer brut lu depuis le disque.
- * @returns Chaîne de caractères décodée.
+ * @param buf - Raw buffer read from disk.
+ * @returns Decoded string.
  */
 function decodeLatin1(buf: Buffer): string {
 	let result = "";
@@ -59,11 +59,11 @@ function decodeLatin1(buf: Buffer): string {
 }
 
 /**
- * Découpe une ligne CSV sur le séparateur `;`.
- * Gère les champs entre guillemets doubles (`"`).
+ * Splits a CSV line on the `;` separator.
+ * Handles double-quoted fields (`"`).
  *
- * @param line - Ligne brute du fichier.
- * @returns Tableau de valeurs (sans les guillemets).
+ * @param line - Raw line from the file.
+ * @returns Array of values (without quotes).
  */
 function splitLine(line: string): string[] {
 	const fields: string[] = [];

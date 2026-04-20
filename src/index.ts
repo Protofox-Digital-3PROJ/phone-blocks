@@ -1,13 +1,13 @@
 /**
  * @module phone-blocks
  * @description
- * Librairie de résolution de blocs de numérotation téléphonique français.
+ * French phone number block resolution library.
  *
- * Utilise les fichiers ouverts de l'ARCEP publiés sur data.gouv.fr :
- * - **MAJNUM** : tranches de numéros et leur attributaire
- * - **MAJRIO** : identité complète de chaque attributaire
+ * Uses ARCEP open data files published on data.gouv.fr:
+ * - **MAJNUM**: number ranges and their assignee
+ * - **MAJRIO**: full identity of each assignee
  *
- * ### Usage rapide
+ * ### Quick usage
  *
  * ```ts
  * import { PhoneBlockRegistry } from "phone-blocks";
@@ -24,12 +24,11 @@
  * @packageDocumentation
  */
 
-export { PhoneBlockRegistry } from "./PhoneBlockRegistry.js";
 export { parseCsv } from "./csv-parser.js";
+export { PhoneBlockRegistry } from "./PhoneBlockRegistry.js";
 export type {
-	PhoneBlock,
-	LookupResult,
-	RawNumBlock,
-	RawOperator,
-	Territoire,
+    LookupResult, PhoneBlock, RawNumBlock,
+    RawOperator,
+    Territoire
 } from "./types.js";
+
