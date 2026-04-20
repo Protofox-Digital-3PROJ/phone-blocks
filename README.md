@@ -17,10 +17,8 @@ bun add phone-blocks
 ```ts
 import { PhoneBlockRegistry } from "phone-blocks";
 
-const registry = PhoneBlockRegistry.fromFiles(
-  "./data/MAJNUM.csv",
-  "./data/MAJRIO.csv",
-);
+// Zero-config — uses bundled ARCEP data
+const registry = PhoneBlockRegistry.fromDataDir();
 
 const { block } = registry.lookup("0612345678");
 console.log(block?.operatorName); // "Orange"
@@ -44,6 +42,20 @@ The library supports all ARCEP CSV datasets published on data.gouv.fr:
 | `GELNUM.csv` | Frozen number blocks open for attribution | No |
 
 ## Loading all datasets
+
+The simplest way is `fromDataDir()`, which loads all 10 bundled CSV files at once:
+
+```ts
+const registry = PhoneBlockRegistry.fromDataDir();
+```
+
+You can also point to a custom directory:
+
+```ts
+const registry = PhoneBlockRegistry.fromDataDir("/path/to/my/data");
+```
+
+Or load files individually with `fromFiles()`:
 
 ```ts
 const registry = PhoneBlockRegistry.fromFiles(
@@ -69,6 +81,18 @@ const registry = PhoneBlockRegistry.fromFiles(
 ### `PhoneBlockRegistry`
 
 #### Static factories
+
+##### `fromDataDir(dataDir?)`
+
+Loads all 10 ARCEP CSV files from a directory. Defaults to the bundled `data/` directory shipped with the package.
+
+```ts
+// Bundled data (zero-config)
+const registry = PhoneBlockRegistry.fromDataDir();
+
+// Custom directory
+const registry = PhoneBlockRegistry.fromDataDir("/path/to/data");
+```
 
 ##### `fromFiles(majnumPath, majrioPath, options?)`
 

@@ -19,6 +19,8 @@
  * ```
  */
 
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseCsv } from "./csv-parser.js";
 import type {
 	FrozenBlock,
@@ -35,6 +37,9 @@ import type {
 } from "./types.js";
 
 // ─── Internal helpers ────────────────────────────────────────────────────────────
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DEFAULT_DATA_DIR = join(__dirname, "..", "data");
 
 /**
  * Parses a date in DD/MM/YYYY format into a `Date` object.
@@ -121,6 +126,42 @@ export class PhoneBlockRegistry {
 	}
 
 	// ─── Factories ─────────────────────────────────────────────────────────────
+
+	/**
+	 * Builds a registry by loading all CSV files from a directory.
+	 *
+	 * Defaults to the bundled `data/` directory shipped with the package.
+	 *
+	 * @param dataDir - Path to the directory containing ARCEP CSV files.
+	 * @returns Ready-to-use {@link PhoneBlockRegistry} instance.
+	 *
+	 * @example
+	 * ```ts
+	 * // Use bundled data
+	 * const registry = PhoneBlockRegistry.fromDataDir();
+	 *
+	 * // Use custom directory
+	 * const registry = PhoneBlockRegistry.fromDataDir("/path/to/data");
+	 * ```
+	 */
+	static fromDataDir(dataDir: string = DEFAULT_DATA_DIR): PhoneBlockRegistry {
+		return PhoneBlockRegistry.fromFiles(
+			join(dataDir, "MAJNUM.csv"),
+			join(dataDir, "MAJRIO.csv"),
+			{
+				majnfbPath: join(dataDir, "MAJNFB.csv"),
+				majmncPath: join(dataDir, "MAJMNC.csv"),
+				majportaPath: join(dataDir, "MAJPORTA.csv"),
+				gelnumPath: join(dataDir, "GELNUM.csv"),
+				extraOperatorPaths: [
+					join(dataDir, "MAJCPSN.csv"),
+					join(dataDir, "MAJCPSI.csv"),
+					join(dataDir, "MAJR1R2.csv"),
+					join(dataDir, "MAJSDT.csv"),
+				],
+			},
+		);
+	}
 
 	/**
 	 * Builds a registry by reading ARCEP CSV files directly.
