@@ -1,6 +1,6 @@
 {
 	"name": "phone-blocks",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"license": "MIT",
 	"description": "French phone number block resolution library (data.gouv.fr)",
 	"repository": {

@@ -24,6 +24,14 @@ const { block } = registry.lookup("0612345678");
 console.log(block?.operatorName); // "Orange"
 ```
 
+### CLI lookup
+
+```bash
+bun src/lookup.ts 0612345678
+```
+
+Returns a JSON object with the block info (operator, territory, attribution date, range) and portability data if the block has been ported.
+
 ## Supported datasets
 
 The library supports all ARCEP CSV datasets published on data.gouv.fr:
