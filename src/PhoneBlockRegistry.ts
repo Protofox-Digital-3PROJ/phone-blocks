@@ -134,14 +134,14 @@ export class PhoneBlockRegistry {
 		const operatorIndex = new Map<string, string>();
 		for (const op of rawOperators) {
 			const code = op["Code Attributaire"]?.trim();
-			const name = op["Attributaire"]?.trim();
+			const name = op.Attributaire?.trim();
 			if (code && name) operatorIndex.set(code, name);
 		}
 
 		// 2. Transforme et trie les blocs
 		const blocks: PhoneBlock[] = rawBlocks
 			.map((raw): PhoneBlock => {
-				const code = String(raw["Mnémo"] ?? raw["MnÃ©mo"] ?? "").trim();
+				const code = String(raw.Mnémo ?? "").trim();
 				return {
 					id: Number(raw.EZABPQM),
 					rangeStart: Number(raw.Tranche_Debut),
@@ -266,7 +266,7 @@ export class PhoneBlockRegistry {
 
 		while (lo <= hi) {
 			const mid = (lo + hi) >>> 1;
-			const block = this.blocks[mid];
+			const block = this.blocks[mid]!;
 
 			if (value < block.rangeStart) {
 				hi = mid - 1;

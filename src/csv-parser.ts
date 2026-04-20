@@ -29,11 +29,11 @@ export function parseCsv(filePath: string): Record<string, string>[] {
 	const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
 	if (lines.length < 2) return [];
 
-	const headers = splitLine(lines[0]);
+	const headers = splitLine(lines[0]!);
 	const rows: Record<string, string>[] = [];
 
 	for (let i = 1; i < lines.length; i++) {
-		const values = splitLine(lines[i]);
+		const values = splitLine(lines[i]!);
 		const row: Record<string, string> = {};
 		headers.forEach((header, idx) => {
 			row[header.trim()] = (values[idx] ?? "").trim();
@@ -53,7 +53,7 @@ export function parseCsv(filePath: string): Record<string, string>[] {
 function decodeLatin1(buf: Buffer): string {
 	let result = "";
 	for (let i = 0; i < buf.length; i++) {
-		result += String.fromCharCode(buf[i]);
+		result += String.fromCharCode(buf[i]!);
 	}
 	return result;
 }
