@@ -27,8 +27,9 @@
 export { parseCsv } from "./csv-parser.js";
 export { PhoneBlockRegistry } from "./PhoneBlockRegistry.js";
 export type {
-    LookupResult, PhoneBlock, RawNumBlock,
-    RawOperator,
-    Territoire
+	LookupResult,
+	PhoneBlock,
+	RawNumBlock,
+	RawOperator,
+	Territoire,
 } from "./types.js";
-
