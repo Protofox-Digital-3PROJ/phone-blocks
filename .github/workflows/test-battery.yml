@@ -3,6 +3,9 @@ name: Test battery
 on:
   pull_request:
     branches:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
