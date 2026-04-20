@@ -16,11 +16,11 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
+import { PhoneBlockRegistry } from "../src/PhoneBlockRegistry";
 import { NUM_BLOCKS, OPERATORS } from "./fixtures.js";
-import { PhoneBlockRegistry } from "./src/PhoneBlockRegistry.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, "..", "..", "data");
+const DATA_DIR = join(__dirname, "..", "data");
 
 // ─── Registre construit depuis les fixtures ───────────────────────────────────
 

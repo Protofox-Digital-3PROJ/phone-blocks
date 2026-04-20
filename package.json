@@ -2,7 +2,7 @@
 	"name": "phone-blocks",
 	"version": "1.0.0",
 	"license": "MIT",
-	"description": 	"Librairie de résolution de blocs de numéros téléphoniques français (data.gouv.fr)",
+	"description": "Librairie de résolution de blocs de numéros téléphoniques français (data.gouv.fr)",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Protofox-Digital/phone-blocks"
@@ -41,11 +41,13 @@
 		"@biomejs/biome": "^2.4.12",
 		"@eslint/js": "^10.0.1",
 		"@types/bun": "^1.3.12",
+		"@types/node": "^25.6.0",
 		"eslint": "^10.2.1",
 		"globals": "^17.5.0",
 		"jiti": "^2.6.1",
 		"tsup": "^8.5.1",
-		"typescript-eslint": "^8.58.2"
+		"typescript-eslint": "^8.58.2",
+		"vitest": "^4.1.4"
 	},
 	"peerDependencies": {
 		"typescript": "^6.0.3"

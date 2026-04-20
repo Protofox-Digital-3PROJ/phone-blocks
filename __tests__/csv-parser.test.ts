@@ -7,7 +7,7 @@ import { unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { parseCsv } from "./dist/csv-parser.js";
+import { parseCsv } from "../src/csv-parser";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
