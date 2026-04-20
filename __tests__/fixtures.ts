@@ -4,7 +4,7 @@
  * of ARCEP's MAJNUM and MAJRIO files.
  */
 
-import type { RawNumBlock, RawOperator } from "../src/types";
+import type { RawMobileNetworkCode, RawNumBlock, RawOperator, RawPortability } from "../src/types";
 
 /** Fictional operators covering nominal and edge cases. */
 export const OPERATORS: RawOperator[] = [
@@ -72,5 +72,57 @@ export const NUM_BLOCKS: RawNumBlock[] = [
 		Mnémo: "UNKN",
 		Territoire: "COM",
 		Date_Attribution: "01/06/2020",
+	},
+];
+
+/** Fictional short number blocks (MAJNFB schema). */
+export const SHORT_NUMBER_BLOCKS: RawNumBlock[] = [
+	{
+		EZABPQM: 15,
+		Tranche_Debut: 15,
+		Tranche_Fin: 15,
+		Mnémo: "FRTE",
+		Territoire: "Métropole",
+		Date_Attribution: "01/01/2010",
+	},
+	{
+		EZABPQM: 3000,
+		Tranche_Debut: 3000,
+		Tranche_Fin: 3099,
+		Mnémo: "SFR0",
+		Territoire: "Métropole",
+		Date_Attribution: "01/06/2018",
+	},
+];
+
+/** Fictional MCC-MNC entries (MAJMNC schema). */
+export const MNC_ENTRIES: RawMobileNetworkCode[] = [
+	{
+		"MCC-MNC": "20801",
+		Mnémo: "FRTE",
+		Nom: "Orange France",
+		Date_Attribution: "01/01/2000",
+		Décision_Attribution: "2000-0001",
+	},
+	{
+		"MCC-MNC": "20810",
+		Mnémo: "SFR0",
+		Nom: "SFR",
+		Date_Attribution: "01/01/2000",
+		Décision_Attribution: "2000-0002",
+	},
+];
+
+/** Fictional portability entries (MAJPORTA schema). */
+export const PORTABILITY_ENTRIES: RawPortability[] = [
+	{
+		EZABPQM: "6000",
+		Mnémo: "SFR0",
+		Date_Attribution: "15/03/2022",
+	},
+	{
+		EZABPQM: "7000",
+		Mnémo: "FRTE",
+		Date_Attribution: "01/09/2023",
 	},
 ];

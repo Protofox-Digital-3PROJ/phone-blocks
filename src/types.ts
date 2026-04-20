@@ -4,6 +4,10 @@
  *
  * MAJNUM: table of assigned number ranges.
  * MAJRIO: table of assignees (operators / resources).
+ * MAJNFB: table of short/special numbers (emergency, services).
+ * MAJMNC: table of Mobile Network Codes (MCC-MNC).
+ * MAJPORTA: table of number portability assignments.
+ * MAJCPSN/MAJR1R2/MAJSDT: additional operator tables.
  */
 
 /**
@@ -74,5 +78,73 @@ export interface LookupResult {
 	/** Queried number, normalized to 9 digits (without the leading 0). */
 	readonly normalizedNumber: string;
 	/** Found block, or `null` if the number does not belong to any range. */
+	readonly block: PhoneBlock | null;
+}
+
+/**
+ * Represents a raw row from the MAJMNC.csv file (Mobile Network Codes).
+ */
+export interface RawMobileNetworkCode {
+	/** MCC-MNC identifier (e.g. "20801"). */
+	"MCC-MNC": string;
+	/** 4-letter mnemonic code of the assignee. */
+	Mnémo: string;
+	/** Full operator name. */
+	Nom: string;
+	/** Assignment date in DD/MM/YYYY format. */
+	Date_Attribution: string;
+	/** ARCEP decision number. */
+	Décision_Attribution: string;
+}
+
+/**
+ * Enriched Mobile Network Code entry.
+ */
+export interface MobileNetworkCode {
+	/** MCC-MNC identifier (e.g. "20801"). */
+	readonly mccMnc: string;
+	/** Assignee mnemonic code (e.g. "FRTE"). */
+	readonly operatorCode: string;
+	/** Full operator name. */
+	readonly operatorName: string;
+	/** Assignment date (Date object). */
+	readonly attributedAt: Date;
+	/** ARCEP decision number. */
+	readonly decision: string;
+}
+
+/**
+ * Represents a raw row from the MAJPORTA.csv file (number portability).
+ */
+export interface RawPortability {
+	/** Block identifier (EZABPQM column). */
+	EZABPQM: string;
+	/** 4-letter mnemonic code of the current assignee. */
+	Mnémo: string;
+	/** Assignment date in DD/MM/YYYY format. */
+	Date_Attribution: string;
+}
+
+/**
+ * Enriched portability entry: block reassigned after number portability.
+ */
+export interface PortabilityEntry {
+	/** Block identifier (EZABPQM). */
+	readonly blockId: string;
+	/** Current assignee mnemonic code. */
+	readonly operatorCode: string;
+	/** Human-readable operator name, if available. */
+	readonly operatorName: string | null;
+	/** Assignment date (Date object). */
+	readonly attributedAt: Date;
+}
+
+/**
+ * Result of a short/special number lookup.
+ */
+export interface ShortNumberLookupResult {
+	/** Queried short number (as-is). */
+	readonly number: string;
+	/** Found block, or `null` if the number is not a known short number. */
 	readonly block: PhoneBlock | null;
 }

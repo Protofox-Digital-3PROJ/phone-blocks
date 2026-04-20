@@ -28,8 +28,14 @@ export { parseCsv } from "./csv-parser.js";
 export { PhoneBlockRegistry } from "./PhoneBlockRegistry.js";
 export type {
 	LookupResult,
+	MobileNetworkCode,
 	PhoneBlock,
+	PortabilityEntry,
+	RawMobileNetworkCode,
 	RawNumBlock,
 	RawOperator,
-	Territoire,
+	RawPortability,
+	ShortNumberLookupResult,
+	Territoire
 } from "./types.js";
+

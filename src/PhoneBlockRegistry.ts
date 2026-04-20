@@ -22,9 +22,14 @@
 import { parseCsv } from "./csv-parser.js";
 import type {
 	LookupResult,
+	MobileNetworkCode,
 	PhoneBlock,
+	PortabilityEntry,
+	RawMobileNetworkCode,
 	RawNumBlock,
 	RawOperator,
+	RawPortability,
+	ShortNumberLookupResult,
 } from "./types.js";
 
 // ─── Internal helpers ────────────────────────────────────────────────────────────
@@ -78,6 +83,15 @@ export class PhoneBlockRegistry {
 	/** Index opérateurs : code mnémo → nom complet. */
 	private readonly operatorIndex: ReadonlyMap<string, string>;
 
+	/** Short/special number blocks (MAJNFB), sorted by rangeStart. */
+	private readonly shortNumberBlocks: PhoneBlock[];
+
+	/** Mobile Network Codes (MAJMNC), indexed by MCC-MNC. */
+	private readonly mncIndex: ReadonlyMap<string, MobileNetworkCode>;
+
+	/** Portability entries (MAJPORTA), indexed by EZABPQM. */
+	private readonly portabilityIndex: ReadonlyMap<string, PortabilityEntry>;
+
 	/**
 	 * Constructeur privé — utilisez {@link PhoneBlockRegistry.fromFiles} ou
 	 * {@link PhoneBlockRegistry.fromRaw} pour instancier.
@@ -88,9 +102,15 @@ export class PhoneBlockRegistry {
 	private constructor(
 		blocks: PhoneBlock[],
 		operatorIndex: Map<string, string>,
+		shortNumberBlocks: PhoneBlock[] = [],
+		mncIndex: Map<string, MobileNetworkCode> = new Map(),
+		portabilityIndex: Map<string, PortabilityEntry> = new Map(),
 	) {
 		this.blocks = blocks;
 		this.operatorIndex = operatorIndex;
+		this.shortNumberBlocks = shortNumberBlocks;
+		this.mncIndex = mncIndex;
+		this.portabilityIndex = portabilityIndex;
 	}
 
 	// ─── Factories ─────────────────────────────────────────────────────────────
@@ -100,22 +120,63 @@ export class PhoneBlockRegistry {
 	 *
 	 * @param majnumPath - Path to `MAJNUM.csv`.
 	 * @param majrioPath - Path to `MAJRIO.csv`.
+	 * @param options - Optional paths to additional ARCEP datasets.
 	 * @returns Ready-to-use {@link PhoneBlockRegistry} instance.
 	 *
-	 * @throws {Error} If either file is unreadable or malformed.
+	 * @throws {Error} If a required file is unreadable or malformed.
 	 *
 	 * @example
 	 * ```ts
 	 * const registry = PhoneBlockRegistry.fromFiles(
 	 *   "./data/MAJNUM.csv",
-	 *   "./data/MAJRIO.csv"
+	 *   "./data/MAJRIO.csv",
+	 *   {
+	 *     majnfbPath: "./data/MAJNFB.csv",
+	 *     majmncPath: "./data/MAJMNC.csv",
+	 *     majportaPath: "./data/MAJPORTA.csv",
+	 *     extraOperatorPaths: [
+	 *       "./data/MAJCPSN.csv",
+	 *       "./data/MAJR1R2.csv",
+	 *       "./data/MAJSDT.csv",
+	 *     ],
+	 *   }
 	 * );
 	 * ```
 	 */
-	static fromFiles(majnumPath: string, majrioPath: string): PhoneBlockRegistry {
+	static fromFiles(
+		majnumPath: string,
+		majrioPath: string,
+		options?: {
+			majnfbPath?: string;
+			majmncPath?: string;
+			majportaPath?: string;
+			extraOperatorPaths?: string[];
+		},
+	): PhoneBlockRegistry {
 		const rawBlocks = parseCsv(majnumPath) as unknown as RawNumBlock[];
 		const rawOperators = parseCsv(majrioPath) as unknown as RawOperator[];
-		return PhoneBlockRegistry.fromRaw(rawBlocks, rawOperators);
+
+		const rawNfb = options?.majnfbPath
+			? (parseCsv(options.majnfbPath) as unknown as RawNumBlock[])
+			: undefined;
+		const rawMnc = options?.majmncPath
+			? (parseCsv(options.majmncPath) as unknown as RawMobileNetworkCode[])
+			: undefined;
+		const rawPorta = options?.majportaPath
+			? (parseCsv(options.majportaPath) as unknown as RawPortability[])
+			: undefined;
+
+		const extraOps: RawOperator[] = [];
+		for (const p of options?.extraOperatorPaths ?? []) {
+			extraOps.push(...(parseCsv(p) as unknown as RawOperator[]));
+		}
+
+		return PhoneBlockRegistry.fromRaw(rawBlocks, rawOperators, {
+			rawShortNumbers: rawNfb,
+			rawMnc,
+			rawPortability: rawPorta,
+			extraOperators: extraOps.length > 0 ? extraOps : undefined,
+		});
 	}
 
 	/**
@@ -124,11 +185,18 @@ export class PhoneBlockRegistry {
 	 *
 	 * @param rawBlocks - Raw MAJNUM rows.
 	 * @param rawOperators - Raw MAJRIO rows.
+	 * @param options - Optional additional datasets.
 	 * @returns {@link PhoneBlockRegistry} instance.
 	 */
 	static fromRaw(
 		rawBlocks: RawNumBlock[],
 		rawOperators: RawOperator[],
+		options?: {
+			rawShortNumbers?: RawNumBlock[];
+			rawMnc?: RawMobileNetworkCode[];
+			rawPortability?: RawPortability[];
+			extraOperators?: RawOperator[];
+		},
 	): PhoneBlockRegistry {
 		// 1. Build operator index: Code Attributaire → Attributaire
 		const operatorIndex = new Map<string, string>();
@@ -136,6 +204,15 @@ export class PhoneBlockRegistry {
 			const code = op["Code Attributaire"]?.trim();
 			const name = op.Attributaire?.trim();
 			if (code && name) operatorIndex.set(code, name);
+		}
+
+		// Merge extra operator tables (MAJCPSN, MAJR1R2, MAJSDT)
+		for (const op of options?.extraOperators ?? []) {
+			const code = op["Code Attributaire"]?.trim();
+			const name = op.Attributaire?.trim();
+			if (code && name && !operatorIndex.has(code)) {
+				operatorIndex.set(code, name);
+			}
 		}
 
 		// 2. Transform and sort blocks
@@ -154,7 +231,53 @@ export class PhoneBlockRegistry {
 			})
 			.sort((a, b) => a.rangeStart - b.rangeStart);
 
-		return new PhoneBlockRegistry(blocks, operatorIndex);
+		// 3. Build short number blocks (MAJNFB)
+		const shortNumberBlocks: PhoneBlock[] = (options?.rawShortNumbers ?? [])
+			.map((raw): PhoneBlock => {
+				const code = String(raw.Mnémo ?? "").trim();
+				return {
+					id: Number(raw.EZABPQM),
+					rangeStart: Number(raw.Tranche_Debut),
+					rangeEnd: Number(raw.Tranche_Fin),
+					operatorCode: code,
+					operatorName: operatorIndex.get(code) ?? null,
+					territoire: String(raw.Territoire ?? "").trim(),
+					attributedAt: parseFrDate(String(raw.Date_Attribution ?? "").trim()),
+				};
+			})
+			.sort((a, b) => a.rangeStart - b.rangeStart);
+
+		// 4. Build MCC-MNC index (MAJMNC)
+		const mncIndex = new Map<string, MobileNetworkCode>();
+		for (const raw of options?.rawMnc ?? []) {
+			const mccMnc = String(raw["MCC-MNC"] ?? "").trim();
+			if (mccMnc) {
+				mncIndex.set(mccMnc, {
+					mccMnc,
+					operatorCode: String(raw.Mnémo ?? "").trim(),
+					operatorName: String(raw.Nom ?? "").trim(),
+					attributedAt: parseFrDate(String(raw.Date_Attribution ?? "").trim()),
+					decision: String(raw.Décision_Attribution ?? "").trim(),
+				});
+			}
+		}
+
+		// 5. Build portability index (MAJPORTA)
+		const portabilityIndex = new Map<string, PortabilityEntry>();
+		for (const raw of options?.rawPortability ?? []) {
+			const blockId = String(raw.EZABPQM ?? "").trim();
+			if (blockId) {
+				const code = String(raw.Mnémo ?? "").trim();
+				portabilityIndex.set(blockId, {
+					blockId,
+					operatorCode: code,
+					operatorName: operatorIndex.get(code) ?? null,
+					attributedAt: parseFrDate(String(raw.Date_Attribution ?? "").trim()),
+				});
+			}
+		}
+
+		return new PhoneBlockRegistry(blocks, operatorIndex, shortNumberBlocks, mncIndex, portabilityIndex);
 	}
 
 	// ─── Public methods ───────────────────────────────────────────────────────────
@@ -243,6 +366,65 @@ export class PhoneBlockRegistry {
 			totalNumbers,
 			blocksWithUnknownOperator,
 		};
+	}
+
+	/**
+	 * Looks up a short/special number (e.g. "15", "112", "3008").
+	 *
+	 * Uses the MAJNFB dataset. The search is performed using binary search.
+	 *
+	 * @param shortNumber - Short number to look up (as string).
+	 * @returns {@link ShortNumberLookupResult} with the found block or `null`.
+	 */
+	lookupShortNumber(shortNumber: string): ShortNumberLookupResult {
+		const num = Number(shortNumber.replace(/\s/g, ""));
+		if (Number.isNaN(num)) return { number: shortNumber, block: null };
+
+		let lo = 0;
+		let hi = this.shortNumberBlocks.length - 1;
+		while (lo <= hi) {
+			const mid = (lo + hi) >>> 1;
+			const block = this.shortNumberBlocks[mid]!;
+			if (num < block.rangeStart) hi = mid - 1;
+			else if (num > block.rangeEnd) lo = mid + 1;
+			else return { number: shortNumber, block };
+		}
+		return { number: shortNumber, block: null };
+	}
+
+	/**
+	 * Looks up a Mobile Network Code (MCC-MNC).
+	 *
+	 * Uses the MAJMNC dataset.
+	 *
+	 * @param mccMnc - MCC-MNC identifier (e.g. "20801").
+	 * @returns {@link MobileNetworkCode} or `null`.
+	 */
+	lookupMobileNetworkCode(mccMnc: string): MobileNetworkCode | null {
+		return this.mncIndex.get(mccMnc.trim()) ?? null;
+	}
+
+	/**
+	 * Returns all Mobile Network Code entries.
+	 *
+	 * @returns Array of {@link MobileNetworkCode} sorted by MCC-MNC.
+	 */
+	getMobileNetworkCodes(): MobileNetworkCode[] {
+		return Array.from(this.mncIndex.values()).sort((a, b) =>
+			a.mccMnc.localeCompare(b.mccMnc),
+		);
+	}
+
+	/**
+	 * Looks up the current operator for a block after number portability.
+	 *
+	 * Uses the MAJPORTA dataset.
+	 *
+	 * @param blockId - EZABPQM block identifier (e.g. "010000").
+	 * @returns {@link PortabilityEntry} or `null`.
+	 */
+	lookupPortability(blockId: string): PortabilityEntry | null {
+		return this.portabilityIndex.get(blockId.trim()) ?? null;
 	}
 
 	/**

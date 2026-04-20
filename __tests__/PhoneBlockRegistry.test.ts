@@ -17,7 +17,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PhoneBlockRegistry } from "../src/PhoneBlockRegistry";
-import { NUM_BLOCKS, OPERATORS } from "./fixtures.js";
+import { MNC_ENTRIES, NUM_BLOCKS, OPERATORS, PORTABILITY_ENTRIES, SHORT_NUMBER_BLOCKS } from "./fixtures.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, "..", "data");
@@ -257,5 +257,78 @@ describe("PhoneBlockRegistry — fromFiles (real ARCEP data)", () => {
 
 	it("lists at least 100 distinct operators", () => {
 		expect(registry.getOperators().length).toBeGreaterThan(100);
+	});
+});
+
+// ─── New datasets ───────────────────────────────────────────────────────────────
+
+describe("PhoneBlockRegistry — short numbers (MAJNFB)", () => {
+	const registry = PhoneBlockRegistry.fromRaw(NUM_BLOCKS, OPERATORS, {
+		rawShortNumbers: SHORT_NUMBER_BLOCKS,
+	});
+
+	it("finds exact short number (15)", () => {
+		const result = registry.lookupShortNumber("15");
+		expect(result.block).not.toBeNull();
+		expect(result.block!.operatorCode).toBe("FRTE");
+	});
+
+	it("finds short number in a range (3050)", () => {
+		const result = registry.lookupShortNumber("3050");
+		expect(result.block).not.toBeNull();
+		expect(result.block!.operatorCode).toBe("SFR0");
+	});
+
+	it("returns null for unknown short number", () => {
+		expect(registry.lookupShortNumber("999").block).toBeNull();
+	});
+
+	it("returns null for non-numeric input", () => {
+		expect(registry.lookupShortNumber("abc").block).toBeNull();
+	});
+});
+
+describe("PhoneBlockRegistry — MCC-MNC (MAJMNC)", () => {
+	const registry = PhoneBlockRegistry.fromRaw(NUM_BLOCKS, OPERATORS, {
+		rawMnc: MNC_ENTRIES,
+	});
+
+	it("looks up a known MCC-MNC", () => {
+		const mnc = registry.lookupMobileNetworkCode("20801");
+		expect(mnc).not.toBeNull();
+		expect(mnc!.operatorName).toBe("Orange France");
+	});
+
+	it("returns null for unknown MCC-MNC", () => {
+		expect(registry.lookupMobileNetworkCode("99999")).toBeNull();
+	});
+
+	it("lists all MCC-MNC entries sorted", () => {
+		const all = registry.getMobileNetworkCodes();
+		expect(all).toHaveLength(2);
+		expect(all[0]!.mccMnc).toBe("20801");
+		expect(all[1]!.mccMnc).toBe("20810");
+	});
+});
+
+describe("PhoneBlockRegistry — portability (MAJPORTA)", () => {
+	const registry = PhoneBlockRegistry.fromRaw(NUM_BLOCKS, OPERATORS, {
+		rawPortability: PORTABILITY_ENTRIES,
+	});
+
+	it("looks up portability for a known block", () => {
+		const entry = registry.lookupPortability("6000");
+		expect(entry).not.toBeNull();
+		expect(entry!.operatorCode).toBe("SFR0");
+		expect(entry!.operatorName).toBe("Société française du radiotéléphone");
+	});
+
+	it("returns null for unknown block", () => {
+		expect(registry.lookupPortability("9999")).toBeNull();
+	});
+
+	it("resolves operator name from operator index", () => {
+		const entry = registry.lookupPortability("7000");
+		expect(entry!.operatorName).toBe("Orange");
 	});
 });
