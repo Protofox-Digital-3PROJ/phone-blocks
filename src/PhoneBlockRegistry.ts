@@ -298,14 +298,27 @@ export class PhoneBlockRegistry {
 				frozenIndex.set(blockId, {
 					blockId,
 					type: String(raw.Type ?? "").trim(),
-					interestOpensAt: parseFrDate(String(raw["Ouverture des manifestations d'intérêts"] ?? "").trim()),
-					interestClosesAt: parseFrDate(String(raw["Clôture des manifestations d'intérêts"] ?? "").trim()),
-					attributionOpensAt: parseFrDate(String(raw["Ouverture des demandes d'attribution"] ?? "").trim()),
+					interestOpensAt: parseFrDate(
+						String(raw["Ouverture des manifestations d'intérêts"] ?? "").trim(),
+					),
+					interestClosesAt: parseFrDate(
+						String(raw["Clôture des manifestations d'intérêts"] ?? "").trim(),
+					),
+					attributionOpensAt: parseFrDate(
+						String(raw["Ouverture des demandes d'attribution"] ?? "").trim(),
+					),
 				});
 			}
 		}
 
-		return new PhoneBlockRegistry(blocks, operatorIndex, shortNumberBlocks, mncIndex, portabilityIndex, frozenIndex);
+		return new PhoneBlockRegistry(
+			blocks,
+			operatorIndex,
+			shortNumberBlocks,
+			mncIndex,
+			portabilityIndex,
+			frozenIndex,
+		);
 	}
 
 	// ─── Public methods ───────────────────────────────────────────────────────────

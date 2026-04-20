@@ -38,6 +38,5 @@ export type {
 	RawOperator,
 	RawPortability,
 	ShortNumberLookupResult,
-	Territoire
+	Territoire,
 } from "./types.js";
-
